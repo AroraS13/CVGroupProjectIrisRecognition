@@ -29,6 +29,14 @@ Implementation of iris recognition algorithm following Ma et al., 2003.
 5. Iris Matching
 6. Performance Evaluation
 
+## Setup
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
 ## Dataset
 
-Place CASIA Iris Image Database (version 1.0) in `data/`. 108 eyes, 7 images per eye (320×280 BMP).
+Place CASIA Iris Image Database in `data/`. 108 eyes, 7 images per eye (320×280 BMP).
