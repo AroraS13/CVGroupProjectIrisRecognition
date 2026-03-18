@@ -2,6 +2,9 @@
 FeatureExtraction - Filtering the iris and extracting features following '3.3 Feature Extraction' from the paper.
 """
 
+import numpy as np
+import cv2
+
 def circularly_symmetric_filter(size, sigma_x, sigma_y, f):
     """
     Generates a circularly symmetric spatial filter as defined in Equation 3 of Li Ma et al.
