@@ -47,11 +47,11 @@ Our system processes raw eye images through a sequential biometric pipeline to i
 ## Limitations of the Current Design
 While highly effective on the CASIA dataset, the current design has a few architectural limitations:
 
-Rigid Geometric Assumptions: The localization step assumes that both the pupil and the iris are perfect circles. In reality, pupils can be slightly elliptical and are rarely perfectly concentric with the outer iris boundary.
+1. **Rigid Geometric Assumptions**: The localization step assumes that both the pupil and the iris are perfect circles. In reality, pupils can be slightly elliptical and are rarely perfectly concentric with the outer iris boundary.
 
-Vulnerability to Occlusions: The current pipeline unwraps the iris but does not actively detect and mask out heavy occlusions caused by eyelids, eyelashes, or specular reflections (light glares). If eyelashes cover a large portion of the iris, their texture will be encoded into the feature vector, introducing noise and potentially causing false rejections.
+2. **Vulnerability to Occlusions**: The current pipeline unwraps the iris but does not actively detect and mask out heavy occlusions caused by eyelids, eyelashes, or specular reflections (light glares). If eyelashes cover a large portion of the iris, their texture will be encoded into the feature vector, introducing noise and potentially causing false rejections.
 
-Sensitivity to Image Quality: The system currently attempts to process all images fed to it. If an image is heavily out of focus or motion-blurred, the spatial filters will extract flattened statistics, reducing matching accuracy.
+3. **Sensitivity to Image Quality**: The system currently attempts to process all images fed to it. If an image is heavily out of focus or motion-blurred, the spatial filters will extract flattened statistics, reducing matching accuracy.
 
 ## How to Improve It
 To build a more robust and production-ready system, the following improvements can be made:
