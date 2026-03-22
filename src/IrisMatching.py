@@ -9,7 +9,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 N_COMPONENTS = 200
 
 
-def _get_class_centers(projected_train, train_labels):
+def get_class_centers(projected_train, train_labels):
     """
     Helper function for predict() and get_cosine_scores().
     Computes the mean feature vector (center) for each class in the projected space
@@ -30,7 +30,7 @@ def _get_class_centers(projected_train, train_labels):
     return class_centers
 
 
-def _get_cosine_distance(a, b):
+def get_cosine_distance(a, b):
     """
     Helper function for predict() and get_cosine_scores().
     Calculate the cosine distance (1 - cosine similarity) between the two feature vectors, see d3 in equation 8.
@@ -52,10 +52,10 @@ def _get_cosine_distance(a, b):
 
 def get_cosine_scores(lda, train_vectors, train_labels, test_vectors, test_labels):
     """
-    For ease of PerformanceEvaluation.py implementation, compute and return genuine and impostor cosine distance scores for each test sample for the ROC curve
-    --> compute FMR (how often an impostor is accepted) and FNMR (how often a genuine is rejected)
-    Genuine score: cosine distance to its own true class center.
-    Impostor score: cosine distance to the nearest class center that doesn't belong to its true class.
+    For ease of PerformanceEvaluation.py implementation, compute and return actual and assumed cosine distance scores for each test sample for the ROC curve
+    --> compute FMR (how often an assumed one is accepted) and FNMR (how often a actual one is rejected)
+    actual score: cosine distance to its own true class center.
+    assumed score: cosine distance to the nearest class center that doesn't belong to its true class.
   
     Parameters:
     - lda (LinearDiscriminantAnalysis): fitted LDA model
@@ -67,31 +67,31 @@ def get_cosine_scores(lda, train_vectors, train_labels, test_vectors, test_label
     # project feature matrices into the reduced space and compute the mean vector per subject
     projected_train_vectors = lda.transform(train_vectors)
     projected_test_vectors = lda.transform(test_vectors)
-    class_centers = _get_class_centers(projected_train_vectors, train_labels)
-    # record genuine pair and impostor pair distances
-    genuine_scores = []
-    impostor_scores = []
+    class_centers = get_class_centers(projected_train_vectors, train_labels)
+    # record actual pair and assumed pair distances
+    actual_scores = []
+    assumed_scores = []
  
     for test_vector, true_label in zip(projected_test_vectors, test_labels):
         # for each test image paired with its true subject id...
-        genuine  = None
-        impostor = float("inf")
+        actual  = None
+        assumed = float("inf")
         for label, center in class_centers.items():
             # for each of the pair's class centers, compute the cosine distance from the current test vector to that center
-            d = _get_cosine_distance(test_vector, center)
+            d = get_cosine_distance(test_vector, center)
             # true_label: the actual subject id of the test image
             # label: the subject id of the center we're currently comparing against
             if label == true_label:
                 # center belongs to the test image's true subject
-                genuine = d
+                actual = d
             else:
-                # update the impostor score if the center is closer than the current best --> finds the nearest wrong class
-                if d < impostor:
-                    impostor = d
+                # update the assumed score if the center is closer than the current best --> finds the nearest wrong class
+                if d < assumed:
+                    assumed = d
         # converts both lists to numpy arrays and returns them as a pair
-        genuine_scores.append(genuine)
-        impostor_scores.append(impostor)
-    return np.array(genuine_scores), np.array(impostor_scores)
+        actual_scores.append(actual)
+        assumed_scores.append(assumed)
+    return np.array(actual_scores), np.array(assumed_scores)
 
 
 def train_lda(train_vectors, train_labels):
@@ -130,7 +130,7 @@ def predict(lda, train_vectors, train_labels, test_vectors):
     projected_train_vectors = lda.transform(train_vectors)
     projected_test_vectors = lda.transform(test_vectors)
     # get the mean vector per subject from the projected training vectors
-    class_centers = _get_class_centers(projected_train_vectors, train_labels)
+    class_centers = get_class_centers(projected_train_vectors, train_labels)
     # extract the labels and align them with their corresponding centers so they can be iterated together
     center_labels = list(class_centers.keys())
     center_matrix = np.array([class_centers[l] for l in center_labels])
@@ -138,7 +138,7 @@ def predict(lda, train_vectors, train_labels, test_vectors):
     predictions = {"l1": [], "l2": [], "cosine": []}
  
     for test_vector in projected_test_vectors:
-        # for each test image's projected feature vector, keep track of the best distance for each measure
+        # for each test image's projected feature vector, keep track of the best distance for each measure (start with "empty" values)
         best_l1 = (None, float("inf"))
         best_l2 = (None, float("inf"))
         best_cosine = (None, float("inf"))
@@ -147,7 +147,7 @@ def predict(lda, train_vectors, train_labels, test_vectors):
             # for each class center and its subject id label, compute the distance between the current test vector and the current class center for all methods
             d1 = np.sum(np.abs(test_vector - center))  # l1, manhattan
             d2 = np.sqrt(np.sum((test_vector - center) ** 2))  # l2, euclidean
-            d3 = _get_cosine_distance(test_vector, center)  # cosine
+            d3 = get_cosine_distance(test_vector, center)  # cosine
             # update the best match for each measure if needed
             if d1 < best_l1[1]:
                 best_l1 = (label, d1)
@@ -156,7 +156,7 @@ def predict(lda, train_vectors, train_labels, test_vectors):
             if d3 < best_cosine[1]:
                 best_cosine = (label, d3)
  
-        # append the winning label for each measure to the predictions list.
+        # append the winning label for each measure to the predictions list
         predictions["l1"].append(best_l1[0])
         predictions["l2"].append(best_l2[0])
         predictions["cosine"].append(best_cosine[0])
@@ -164,7 +164,7 @@ def predict(lda, train_vectors, train_labels, test_vectors):
     return predictions
 
 
-def match_iris():
+def match_iris(train_vectors, train_labels, test_vectors):
     """
     Orchestration function of this module.
     Trains the LDA model to execute classification
@@ -182,4 +182,4 @@ def match_iris():
 
 
 if __name__ == "__main__":
-    match_iris()
+    print("Run this module through IrisRecognition.py")
