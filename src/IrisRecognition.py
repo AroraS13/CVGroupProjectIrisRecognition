@@ -1,6 +1,6 @@
 """
 IrisRecognition - Main function that orchestrates the full iris recognition pipeline.
-Uses IrisLocalization, IrisNormalization, ImageEnhancement, FeatureExtraction, and IrisMatching.
+Uses IrisLocalization, IrisNormalization, ImageEnhancement, FeatureExtraction, IrisMatching, and PerformanceEvaluation.
 """
 
 
