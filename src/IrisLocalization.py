@@ -1,14 +1,5 @@
 """
-IrisLocalization.py
-
-1. Logic behind the script:
-This script implements the localization strategy described in Section 3.2.1 of the Li Ma et al. (2003) paper, divided into three logical steps:
-- Step 1 (Coarse Pupil Center): It projects image intensities vertically and horizontally. The coordinates corresponding to the minima of the two profiles estimate the rough pupil center.
-- Step 2 (Precise Pupil Center): It crops a precise 120x120 window around the rough center, thresholds the darkest region (the pupil), and extracts the largest connected component. Image moments are used to compute the exact centroid, refining the center coordinates and radius.
-- Step 3 (Iris Boundary): Canny edge detection is applied to find boundary structures. While the original paper suggests the Hough Transform here, this script implements a highly efficient "Radial Ray-Casting" technique. It shoots 120 rays outwards from the center and records the distance to the nearest Canny edge. Using the median of these ray lengths robustly filters out noise (like eyelashes or reflections) to find the final iris radius without the computational overhead of the Hough space.
-
-2. Key variables/parameters:
-- image (numpy.ndarray): The 2D grayscale input image from the CASIA database.
+IrisLocalization - Attempts to find pupil center, pupil raidus, and iris radius for given image. 
 """
 
 import cv2
@@ -17,7 +8,14 @@ import numpy as np
 
 def rough_pupil_center(image):
     """
-    Returns rough estimate of pupil center
+    Calculates a coarse estimate of the pupil's center. Since the pupil is typically the darkest region in an eye image, it projects the 2D image intensities into 1D arrays by summing along the columns (axis=0) and rows (axis=1). The coordinates corresponding to the minimum sum in both axes give the rough (x, y) center of the pupil.
+
+    Parameters:
+    - image (numpy.ndarray): The 2D grayscale input image.
+
+    Returns:
+    - x (int): The estimated x-coordinate (column) of the pupil center.
+    - y (int): The estimated y-coordinate (row) of the pupil center.
     """
     #Since pupil should be the darkest region in the image, we can start at the col and row with lowest sum of values
     x = np.argmin(np.sum(image, axis=0))
@@ -29,6 +27,13 @@ def rough_pupil_center(image):
 def find_largest_connected_component(image):
     """
     Returns largest connected component found in image, None if none found
+    This function analyzes a binary image to find distinct connected components of pixels. It uses OpenCV's connected components algorithm to label regions and compute their statistics. Since label 0 is always the background, it ignores it and identifies the foreground label with the maximum area. It then returns a binary mask containing only this largest component.
+
+    Parameters:
+    - image (numpy.ndarray): A binary image (typically thresholded) where the regions of interest are non-zero.
+
+    Returns:
+    - (numpy.ndarray or None): A binary mask (values 0 or 255) of the largest component, or None if no component is found.
     """
     #Use cv2.connectedComponentsWithStats to find components and areas
     label_count, labels, stats, centroids = cv2.connectedComponentsWithStats(image)
@@ -47,7 +52,19 @@ def find_largest_connected_component(image):
 
 def localize_iris(image):
     """
-    Main Localization Function: Returns pupil center x,y values, pupil radius, and iris radius
+    Main Localization Function. This script implements the localization strategy described in Section 3.2.1 of the Li Ma et al. (2003) paper, divided into three logical steps:
+    - Step 1 (Coarse Pupil Center): It projects image intensities vertically and horizontally. The coordinates corresponding to the minima of the two profiles estimate the rough pupil center.
+    - Step 2 (Precise Pupil Center): It crops a precise 120x120 window around the rough center, thresholds the darkest region (the pupil), and extracts the largest connected component. Image moments are used to compute the exact centroid, refining the center coordinates and radius.
+    - Step 3 (Iris Boundary): Canny edge detection is applied to find boundary structures. While the original paper suggests the Hough Transform here, this script implements a highly efficient "Radial Ray-Casting" technique. It shoots 120 rays outwards from the center and records the distance to the nearest Canny edge. Using the median of these ray lengths robustly filters out noise (like eyelashes or reflections) to find the final iris radius without the computational overhead of the Hough space.
+
+    Parameters:
+    - image (numpy.ndarray): The 2D grayscale input image from the CASIA database.
+
+    Returns:
+    - pupil_center_x (int): The x-coordinate of the pupil center.
+    - pupil_center_y (int): The y-coordinate of the pupil center.
+    - pupil_radius (int): The radius of the pupil.
+    - iris_radius (int): The radius of the iris.
     """
     # Step 1: get rough estimate of pupil center
     rough_pupil_x, rough_pupil_y = rough_pupil_center(image)

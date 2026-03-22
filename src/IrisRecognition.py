@@ -8,67 +8,13 @@ import cv2
 import numpy as np
 
 # import all functionalities that are stored in the other modules
+from dataset_loader import load_dataset
 from IrisLocalization import localize_iris
 from IrisNormalization import normalize_iris
 from ImageEnhancement import enhanceImage
 from FeatureExtraction import extract_features
 from IrisMatching import match_iris
 from PerformanceEvaluation import evaluate_performance
-
-
-def load_dataset(dir):
-    """
-    Before anything, load the dataset and returns train (session 1 images) and test (session 2 images) data as lists: [(subject_id, image_array), ...].
-
-    Parameters:
-    - dir (str): path to the folder of the CASIA database
-    """
-    train_data = []
-    test_data = []
-
-    #Probes root directory for subject folders, and then sorts based on subject id
-    for subject_id in sorted(os.listdir(dir)):
-
-        #For every subject folder, look for session folders(1 or 2)
-        sub_path = os.path.join(dir, subject_id)
-
-        if not os.path.isdir(sub_path):
-            continue
-
-        #For every session type
-        # Session "1" = training; session "2" = testing
-        for session in ["1", "2"]:
-            sess_path = os.path.join(sub_path, session)
-            
-            #If session folder is not present, skip 
-            if not os.path.isdir(sess_path):
-                continue
-            
-            #For every image found in session folder
-            for filename in sorted(os.listdir(sess_path)):
-
-                #If file is not .bmp, skip
-                if not filename.lower().endswith(".bmp"):
-                    continue
-                
-                #Create image path
-                img_path = os.path.join(sess_path, filename)
-
-                #Read in image as grayscale
-                image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-
-                #If load image fails, skip
-                if image is None:
-                    print(f"Warning: failed to load {img_path}")
-                    continue
-                
-                #If image is found in session 1, add to train set, test set otherwise
-                if session == "1":
-                    train_data.append((subject_id, image))
-                else:
-                    test_data.append((subject_id, image))
-    #Return sets
-    return train_data, test_data
 
 
 def process_dataset(data):

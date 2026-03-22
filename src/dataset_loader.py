@@ -1,15 +1,5 @@
 """
-dataset_loader.py
-
-1. Logic behind the script:
-This script traverses the hierarchical directory structure of the CASIA Iris Image Database to load images into memory. The CASIA database is organized sequentially: Root -> Subject ID -> Session ID. 
-The outer loop iterates through every subject directory (e.g., "001" to "108"). 
-The inner loop explicitly checks for session folders "1" and "2". Images from session "1" are historically captured earlier and are appended to the training set. Images from session "2" are captured later and are appended to the testing set. OpenCV is used to load valid ".bmp" files directly as grayscale matrices, ensuring they are ready for the preprocessing pipeline.
-
-2. Key variables/parameters:
-- root_dir (str): The path to the root folder containing all subject directories (e.g., 'data/CASIA Iris Image Database/').
-- train_data (list): Accumulates training samples. Formatted as a list of tuples: [(subject_id, image_array), ...].
-- test_data (list): Accumulates testing samples. Formatted similarly to train_data.
+dataset_loader - Loads image dataset into train and test to allow for easy access. 
 """
 
 import os
@@ -19,6 +9,16 @@ import cv2
 def load_dataset(root_dir):
     """
     Loads dataset from root_dir. Returns test and train data as lists
+    This script traverses the hierarchical directory structure of the CASIA Iris Image Database to load images into memory. The CASIA database is organized sequentially: Root -> Subject ID -> Session ID. 
+    The outer loop iterates through every subject directory (e.g., "001" to "108"). 
+    The inner loop explicitly checks for session folders "1" and "2". Images from session "1" are historically captured earlier and are appended to the training set. Images from session "2" are captured later and are appended to the testing set. OpenCV is used to load valid ".bmp" files directly as grayscale matrices, ensuring they are ready for the preprocessing pipeline.
+
+    Parameters:
+    - root_dir (str): The path to the root folder containing all subject directories (e.g., 'data/CASIA Iris Image Database/').
+
+    Returns:
+    - train_data (list): Accumulates training samples from Session 1. Formatted as a list of tuples: [(subject_id, image_array), ...].
+    - test_data (list): Accumulates testing samples from Session 2. Formatted similarly to train_data.
     """
     train_data = []
     test_data = []
@@ -63,5 +63,6 @@ def load_dataset(root_dir):
                     train_data.append((subject_id, image))
                 else:
                     test_data.append((subject_id, image))
+
     #Return sets
     return train_data, test_data
