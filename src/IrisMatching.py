@@ -5,9 +5,6 @@ IrisMatching - Fisher linear discriminant for dimension reduction and nearest ce
 import numpy as np
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
-# the number of LDA (linear discriminant analysis) dimensions to use (200 is the sweet spot where accuracy plateaus)
-N_COMPONENTS = 200
-
 
 def get_class_centers(projected_train, train_labels):
     """
@@ -105,7 +102,8 @@ def train_lda(train_vectors, train_labels):
     - train_labels (list): subject id string per training image
     """
     # select the max allowed dimensions without breaking the math and create the LDA model
-    n_components = min(N_COMPONENTS, len(set(train_labels)) - 1)
+    # 200 = the number of LDA (linear discriminant analysis) dimensions to use (200 is the sweet spot where accuracy plateaus)
+    n_components = min(200, len(set(train_labels)) - 1)
     lda = LinearDiscriminantAnalysis(n_components=n_components)
     # each image produces one feature vector: 3 images per eye --> multiple vectors per subject --> matrix where each row is an image's feature vector
     lda.fit(train_vectors, train_labels)
