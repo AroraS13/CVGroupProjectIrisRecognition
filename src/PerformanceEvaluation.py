@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 # IrisMatching contains functions that PerformanceEvaluation can reuse
-from src.IrisMatching import predict, get_cosine_scores, get_class_centers, get_cosine_distance
+from IrisMatching import predict, get_cosine_scores, get_class_centers, get_cosine_distance
 
 # directory for the output figures
 OUTPUT = "figures"
