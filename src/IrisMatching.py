@@ -9,21 +9,26 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 def get_class_centers(projected_train, train_labels):
     """
     Helper function for predict() and get_cosine_scores().
-    Computes the mean feature vector (center) for each class in the projected space
-    and returns them stored as a dictionary where {subject_id: mean_vector}.
+    Computes the mean feature vector (center) for each class in the projected space and returns them stored as a dictionary where {subject_id: mean_vector}.
  
     Parameters:
     - projected_train (np.ndarray): training feature matrix after LDA projection
     - train_labels (list): subject id string per training image
+
+    Returns:
+    - class_centers (dict): The computed centers for the nearest center classifier.
+
     """
     # maps subject_id --> mean feature vector of all its training samples in the space
     class_centers = {}
+
     # sorted() ensures deterministic key ordering
     for label in sorted(set(train_labels)):
         # for each unique subject id, find all row indices in projected_train that belong to that subject
         indices = [i for i, l in enumerate(train_labels) if l == label]
         # take these rows to compute their mean vector --> subject's class center
         class_centers[label] = np.mean(projected_train[indices], axis=0)
+
     return class_centers
 
 
@@ -31,18 +36,23 @@ def get_cosine_distance(a, b):
     """
     Helper function for predict() and get_cosine_scores().
     Calculate the cosine distance (1 - cosine similarity) between the two feature vectors, see d3 in equation 8.
-    Note: the smaller the better match --> consistent with d1 and d2.
+    Note: A smaller value indicates a better match, consistent with L1 and L2 distance behaviors.
 
     Parameters:
     - a (np.ndarray): projected test vector 
     - b (np.ndarray): class center
+    
+    Returns:
+    - float: The calculated cosine distance (1.0 - cosine similarity).
     """
     # compute the magnitude/length of each vector
     a_norm = np.linalg.norm(a)
     b_norm = np.linalg.norm(b)
+
     # prevent division by zero
     if a_norm == 0 or b_norm == 0:
         return 1.0
+
     # compute the dot product and normalize to get the cosine similarity; subtracting converts it to a distance (0: same direction, 2: opposite)
     return 1.0 - np.dot(a, b) / (a_norm * b_norm)
 
@@ -60,6 +70,9 @@ def get_cosine_scores(lda, train_vectors, train_labels, test_vectors, test_label
     - train_labels (list): subject id string per training image
     - test_vectors (np.ndarray): matrix with one row per testing image
     - test_labels (list): true subject id per test sample
+
+    Returns:
+    - tuple: Two numpy arrays containing (actual_scores, assumed_scores).
     """
     # project feature matrices into the reduced space and compute the mean vector per subject
     projected_train_vectors = lda.transform(train_vectors)
@@ -100,13 +113,18 @@ def train_lda(train_vectors, train_labels):
     Parameters:
     - train_vectors (np.ndarray): matrix with one row per training image
     - train_labels (list): subject id string per training image
+
+    Returns:
+    - lda (LinearDiscriminantAnalysis): The fitted dimensionality reduction model.
     """
     # select the max allowed dimensions without breaking the math and create the LDA model
     # 200 = the number of LDA (linear discriminant analysis) dimensions to use (200 is the sweet spot where accuracy plateaus)
     n_components = min(200, len(set(train_labels)) - 1)
     lda = LinearDiscriminantAnalysis(n_components=n_components)
+
     # each image produces one feature vector: 3 images per eye --> multiple vectors per subject --> matrix where each row is an image's feature vector
     lda.fit(train_vectors, train_labels)
+
     # return the fitted model used to project both training and test vectors (into the reduced space)
     return lda
 
@@ -123,6 +141,9 @@ def predict(lda, train_vectors, train_labels, test_vectors):
     - train_vectors (np.ndarray): matrix with one row per training image
     - train_labels (list): subject id string per training image
     - test_vectors (np.ndarray): matrix with one row per testing image
+
+    Returns:
+    - predictions (dict): Predicted labels for each test image across the three distance metrics.
     """
     # LDA-projected training and test vectors with shape (N_train, n_components)
     projected_train_vectors = lda.transform(train_vectors)
@@ -172,6 +193,9 @@ def match_iris(train_vectors, train_labels, test_vectors):
     - train_vectors (np.ndarray): matrix with one row per training image
     - train_labels (list): subject id string per training image
     - test_vectors (np.ndarray): matrix with one row per testing image
+
+    Returns:
+    - tuple: (lda, predictions).
     """
     # train and predict
     lda = train_lda(train_vectors, train_labels)

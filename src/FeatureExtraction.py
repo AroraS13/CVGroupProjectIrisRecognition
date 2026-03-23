@@ -7,14 +7,17 @@ import cv2
 
 def circularly_symmetric_filter(size, sigma_x, sigma_y, f):
     """
-    Generates a circularly symmetric spatial filter as defined in Equation 3 of Li Ma et al.
-    For reference, read '3.3.2 Feature Vector' from the paper.    
-    
+    Generates a circularly symmetric spatial filter as defined in Equation 3 of Ma et al. (2003).
+    Unlike standard Gabor filters that capture information only at a specific orientation, this custom filter uses a circularly symmetric sinusoidal modulating function. This allows it to capture rich texture information spreading along the radial direction of the iris regardless of minor orientation differences.
+
     Parameters:
     - size (int): The size of the kernel (size x size). 
     - sigma_x (float): Standard deviation of the Gaussian envelope along the x-axis.
     - sigma_y (float): Standard deviation of the Gaussian envelope along the y-axis.
     - f (float): The frequency of the circular sinusoidal function.
+
+    Returns:
+    - custom_filter (numpy.ndarray): The 2D spatial filter kernel ready for convolution.
     """
 
     # Define an X-Y grid centered at 0 to evaluate the mathematical functions symmetrically
@@ -38,16 +41,21 @@ def circularly_symmetric_filter(size, sigma_x, sigma_y, f):
     return custom_filter
 
 
-def extract_features(normalized_iris, num_blocks_h=8, num_blocks_w=48):
+def extract_features(normalized_iris, block_size=8):
     """
-    Extracts texture features from the normalized iris image.
-    Generates a 1536-dimensional vector using 2 channels, 8x48 blocks, and 2 stats (Mean, AAD).
-    For reference, read '3.3.2 Feature Vector' from the paper.
+    Logic behind the script:
+    Extracts texture features following Section 3.3.2 of Ma et al. (2003).
+    First, it crops the top 48 rows of the normalized image to create a 48x512 Region of Interest (ROI). 
+    It convolves this ROI with two spatial filters (2 channels). 
+    Finally, it divides each filtered image into 8x8 small blocks, computing the Mean and 
+    Average Absolute Deviation (AAD) for each, yielding a 1536-dimensional feature vector.
     
     Parameters:
     - normalized_iris (numpy.ndarray): The preprocessed, rectangular iris image.
-    - num_blocks_h (int): Number of vertical blocks to divide the image into (default 8).
-    - num_blocks_w (int): Number of horizontal blocks to divide the image into (default 48).
+    - block_size (int): The size of the square blocks to extract features from (default 8).
+
+    Returns:
+    - np.ndarray: The final 1D feature vector of 1536 elements.
     """
     
     # Define filter bank parameters based on the paper's multi-channel approach.
@@ -57,24 +65,27 @@ def extract_features(normalized_iris, num_blocks_h=8, num_blocks_w=48):
     ]
     
     features = []
+
+    # Crop the Region of Interest (ROI): top 48 rows as per paper
+    roi = normalized_iris[:48, :]
+
+    # Calculate number of vertical and horizontal blocks dynamically based on ROI and block_size
+    h, w = roi.shape
+    num_blocks_h = h // block_size  # 48 // 8 = 6 blocks
+    num_blocks_w = w // block_size  # 512 // 8 = 64 blocks    
     
     # First Loop: Iterate over each spatial filter (multi-resolution channels)
     for filt in filters:
         
         # Convolve the image with the spatial filter, implementation of Equation 4
-        filtered_image = cv2.filter2D(normalized_iris, cv2.CV_64F, filt)
-        
-        # Determine the pixel height and width of each small local block
-        h, w = filtered_image.shape
-        block_h = h // num_blocks_h
-        block_w = w // num_blocks_w
+        filtered_image = cv2.filter2D(roi, cv2.CV_64F, filt)
         
         # Nested Loops: Slide across the filtered image grid block by block
         for i in range(num_blocks_h):
             for j in range(num_blocks_w):
                 
-                # Extract the specific local block (patch) from the filtered image
-                block = filtered_image[i*block_h:(i+1)*block_h, j*block_w:(j+1)*block_w]
+                # Extract the specific 8x8 local block from the filtered image
+                block = filtered_image[i*block_size:(i+1)*block_size, j*block_size:(j+1)*block_size]
                 
                 # Compute local mean (m) of absolute values.
                 # This represents the average energy of the texture in this specific block.
@@ -88,7 +99,3 @@ def extract_features(normalized_iris, num_blocks_h=8, num_blocks_w=48):
                 features.extend([mean_val, aad_val])
                 
     return np.array(features)
-
-if __name__ == "__main__":
-    # Placeholder 
-    pass
